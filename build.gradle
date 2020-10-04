@@ -1,0 +1,78 @@
+plugins {
+    id 'java'
+    id 'groovy'
+    id 'idea'
+    id 'application'
+
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+compileJava.options.encoding = "UTF-8"
+
+repositories {
+    mavenCentral()
+}
+
+applicationDefaultJvmArgs = ["-Xms1024m", "-Xmx2048m"]
+
+ext {
+    cucumberVersion = '6.8.0'
+    junitVersion = '5.7.0'
+    restAssuredVersion = '4.3.1'
+    junitPlatformVersion = '1.7.0'
+
+}
+
+
+dependencies {
+    compile group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
+    compile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
+    compile group: 'org.junit.platform', name: 'junit-platform-engine', version: junitPlatformVersion
+    compile group: 'org.junit.platform', name: 'junit-platform-runner', version: junitPlatformVersion
+    compile group: 'org.junit.platform', name: 'junit-platform-console', version: junitPlatformVersion
+    compile group: 'io.cucumber', name: 'cucumber-junit-platform-engine', version: cucumberVersion
+    compile group: 'io.cucumber', name: 'cucumber-java', version: cucumberVersion
+    compile group: 'io.cucumber', name: 'cucumber-junit', version: cucumberVersion
+    compile group: 'io.cucumber', name: 'cucumber-picocontainer', version: cucumberVersion
+    compile group: 'io.rest-assured', name: 'rest-assured', version: restAssuredVersion
+
+}
+
+configurations {
+    cucumberRuntime {
+        extendsFrom compile
+    }
+}
+
+
+/*task cucumber() {
+    dependsOn assemble, compileJava
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = ['--plugin', 'html:build/cucumber-reports/report.html','--plugin', 'pretty', '--glue', 'stepdefs', 'src/test/resources/features']
+        }
+    }
+}*/
+
+task consoleLauncherTest(type:JavaExec) {
+    dependsOn(testClasses)
+    def reportsDir = file("$buildDir/test-results")
+    outputs.dir(reportsDir)
+    classpath = sourceSets["test"].runtimeClasspath
+    main = "org.junit.platform.console.ConsoleLauncher"
+    args("--scan-classpath")
+    args("--include-engine", "cucumber")
+    args("--reports-dir", reportsDir)
+}
+
+
+test {
+    dependsOn(consoleLauncherTest)
+    exclude("**/*")
+}
+
